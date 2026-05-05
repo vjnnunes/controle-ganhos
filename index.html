@@ -65,7 +65,7 @@
         <div class="valor-box destaque">
           <span>Lucro de hoje</span>
           <strong id="lucroHoje">R$ 0,00</strong>
-          <div class="mini" id="statusMeta">Meta diária não definida</div>
+          <div class="mini" id="statusMeta">Meta semanal não definida</div>
         </div>
         <div class="valor-box">
           <span>Ganhos hoje</span>
@@ -94,9 +94,9 @@
 
     <section id="lancamentos" class="tela ativa">
       <div class="card">
-        <h2>Meta diária</h2>
+        <h2>Meta semanal</h2>
         <label for="metaDiaria">Quanto você quer lucrar por dia?</label>
-        <input id="metaDiaria" type="number" step="0.01" placeholder="Ex: 200" />
+        <input id="metaSemanal" type="number" step="0.01" placeholder="Ex: 200" />
         <button onclick="salvarMeta()">Salvar meta</button>
       </div>
 
@@ -171,7 +171,7 @@
 
   <script>
     let registros = JSON.parse(localStorage.getItem('registrosGanhos')) || [];
-    let metaDiaria = Number(localStorage.getItem('metaDiaria')) || 0;
+    let metaSemanal = Number(localStorage.getItem('metaSemanal')) || 0;
     document.getElementById('metaDiaria').value = metaDiaria || '';
 
     function formatarMoeda(valor) { return valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }); }
@@ -278,7 +278,23 @@
       const kmTotal = ganhos.reduce((s, i) => s + (Number(i.km) || 0), 0);
       document.getElementById('ganhosHoje').textContent = formatarMoeda(ganhosHoje); document.getElementById('gastosHoje').textContent = formatarMoeda(gastosHoje); document.getElementById('lucroHoje').textContent = formatarMoeda(lucroHoje);
       document.getElementById('lucroLiquido').textContent = formatarMoeda(lucro); document.getElementById('lucroLiquido').className = lucro >= 0 ? 'positivo' : 'negativo'; document.getElementById('kmTotal').textContent = `${kmTotal.toFixed(1)} km`;
-      const falta = metaDiaria - lucroHoje; document.getElementById('statusMeta').textContent = metaDiaria > 0 ? (falta <= 0 ? `Meta batida! Passou ${formatarMoeda(Math.abs(falta))}` : `Faltam ${formatarMoeda(falta)} para bater a meta`) : 'Meta diária não definida';
+      const inicioSemana = obterInicioDaSemana();
+const fimSemana = new Date(inicioSemana);
+fimSemana.setDate(inicioSemana.getDate() + 7);
+
+const lucroSemana = registros.filter(item => {
+  const d = dataItem(item);
+  return d && d >= inicioSemana && d < fimSemana;
+}).reduce((s, item) => item.tipo === 'ganho' ? s + item.valor : s - item.valor, 0);
+
+const falta = metaSemanal - lucroSemana;
+
+document.getElementById('statusMeta').textContent =
+  metaSemanal > 0
+    ? (falta <= 0
+        ? `Meta batida! Passou ${formatarMoeda(Math.abs(falta))}`
+        : `Faltam ${formatarMoeda(falta)} para bater a meta`)
+    : 'Meta semanal não definida';
       document.getElementById('totalUber').textContent = formatarMoeda(ganhos.filter(i => i.app === 'Uber').reduce((s,i)=>s+i.valor,0));
       document.getElementById('totalIfood').textContent = formatarMoeda(ganhos.filter(i => i.app === 'iFood').reduce((s,i)=>s+i.valor,0));
       document.getElementById('total99').textContent = formatarMoeda(ganhos.filter(i => i.app === '99').reduce((s,i)=>s+i.valor,0));
