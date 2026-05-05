@@ -172,10 +172,12 @@
   <script>
     let registros = JSON.parse(localStorage.getItem('registrosGanhos')) || [];
     let metaSemanal = Number(localStorage.getItem('metaSemanal')) || 0;
-    document.getElementById('metaDiaria').value = metaDiaria || '';
 
     function formatarMoeda(valor) { return valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }); }
-    function salvarDados() { localStorage.setItem('registrosGanhos', JSON.stringify(registros)); }
+    function salvarDados() { 
+      localStorage.setItem('registrosGanhos', JSON.stringify(registros));
+      localStorage.setItem('metaSemanal', String(metaSemanal));
+    }
     function hojeInicio() { const d = new Date(); d.setHours(0,0,0,0); return d; }
     function dataItem(item) { return item.dataISO ? new Date(item.dataISO) : null; }
     function ehHoje(item) { const d = dataItem(item); const h = hojeInicio(); const a = new Date(h); a.setDate(h.getDate()+1); return d && d >= h && d < a; }
@@ -195,9 +197,9 @@
     }
 
     function salvarMeta() {
-      const valor = Number(document.getElementById('metaDiaria').value);
-      metaDiaria = valor > 0 ? valor : 0;
-      localStorage.setItem('metaDiaria', metaDiaria);
+      const valor = Number(document.getElementById('metaSemanal').value);
+      metaSemanal = valor > 0 ? valor : 0;
+      salvarDados();
       atualizarTela();
       alert('Meta salva com sucesso.');
     }
@@ -240,14 +242,14 @@
     function atualizarGraficoSemanal() {
       const dias = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom']; const inicio = obterInicioDaSemana();
       const semana = dias.map((dia, i) => { const d = new Date(inicio); d.setDate(inicio.getDate()+i); return { dia, ...resumoDia(d) }; });
-      const maior = Math.max(1, metaDiaria, ...semana.map(i => Math.max(Math.abs(i.lucro), i.gastos)));
+      const maior = Math.max(1, metaSemanal, ...semana.map(i => Math.max(Math.abs(i.lucro), i.gastos)));
       const grafico = document.getElementById('graficoSemanal'); grafico.innerHTML = '';
       semana.forEach(item => {
         const lLucro = Math.min(100, Math.abs(item.lucro) / maior * 100);
         const lGasto = Math.min(100, item.gastos / maior * 100);
-        const lMeta = metaDiaria > 0 ? Math.min(100, metaDiaria / maior * 100) : 0;
+        const lMeta = metaSemanal > 0 ? Math.min(100, metaSemanal / maior * 100) : 0;
         const div = document.createElement('div'); div.className = 'grafico-linha';
-        div.innerHTML = `<div class="grafico-topo"><strong>${item.dia}</strong><span>${formatarMoeda(item.lucro)} lucro • ${formatarMoeda(item.gastos)} despesa</span></div><div class="barra-container"><div class="barra-lucro" style="width:${lLucro}%"></div></div><div class="barra-container"><div class="barra-gasto" style="width:${lGasto}%"></div></div>${metaDiaria ? `<div class="barra-container"><div class="barra-meta" style="width:${lMeta}%"></div></div>` : ''}`;
+        div.innerHTML = `<div class="grafico-topo"><strong>${item.dia}</strong><span>${formatarMoeda(item.lucro)} lucro • ${formatarMoeda(item.gastos)} despesa</span></div><div class="barra-container"><div class="barra-lucro" style="width:${lLucro}%"></div></div><div class="barra-container"><div class="barra-gasto" style="width:${lGasto}%"></div></div>${metaSemanal ? `<div class="barra-container"><div class="barra-meta" style="width:${lMeta}%"></div></div>` : ''}`;
         grafico.appendChild(div);
       });
     }
@@ -319,13 +321,32 @@ document.getElementById('statusMeta').textContent =
     function excluirRegistro(index) { if (confirm('Excluir este lançamento?')) { registros.splice(index, 1); salvarDados(); atualizarTela(); } }
     function limparTudo() { if (confirm('Tem certeza que deseja apagar todos os registros?')) { registros = []; salvarDados(); atualizarTela(); } }
     function exportarDados() {
-      const dados = JSON.stringify({ registros, metaDiaria }, null, 2);
+      const dados = JSON.stringify({ registros, metaSemanal }, null, 2);
       const blob = new Blob([dados], { type: 'application/json' });
       const url = URL.createObjectURL(blob); const a = document.createElement('a');
       a.href = url; a.download = 'backup-controle-ganhos.json'; a.click(); URL.revokeObjectURL(url);
     }
 
     if ('serviceWorker' in navigator) { navigator.serviceWorker.register('service-worker.js'); }
+    document.getElementById('metaSemanal').value = metaSemanal || '';
+    
+    // Sincronizar dados periodicamente (a cada 5 segundos)
+    setInterval(() => {
+      salvarDados();
+    }, 5000);
+    
+    // Sincronizar dados ao sair da página
+    window.addEventListener('beforeunload', () => {
+      salvarDados();
+    });
+    
+    // Sincronizar dados quando a aba muda de visibilidade
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden) {
+        salvarDados();
+      }
+    });
+    
     atualizarTela();
   </script>
 </body>
