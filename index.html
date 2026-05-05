@@ -44,13 +44,17 @@
     .barra-lucro { height: 100%; background: #047857; }
     .barra-gasto { height: 100%; background: #dc2626; }
     .barra-meta { height: 100%; background: #2563eb; }
+    .barra-progresso { height: 100%; background: #22c55e; }
     .legenda { display: flex; flex-wrap: wrap; gap: 12px; font-size: 13px; color: #4b5563; margin-bottom: 12px; }
     .legenda span::before { content: ''; display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 5px; }
     .legenda .lucro::before { background: #047857; }
     .legenda .gasto::before { background: #dc2626; }
     .legenda .meta::before { background: #2563eb; }
     .mini { font-size: 13px; color: #6b7280; margin-top: 8px; }
+    .destaque .mini { color: #d1d5db; }
     .botoes-duplos { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .progresso-box { margin-top: 12px; }
+    .progresso-texto { display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 6px; color: #d1d5db; }
   </style>
 </head>
 <body>
@@ -63,9 +67,18 @@
     <section class="card">
       <div class="grid">
         <div class="valor-box destaque">
-          <span>Lucro de hoje</span>
-          <strong id="lucroHoje">R$ 0,00</strong>
+          <span>Lucro desta semana</span>
+          <strong id="lucroSemana">R$ 0,00</strong>
           <div class="mini" id="statusMeta">Meta semanal não definida</div>
+          <div class="progresso-box">
+            <div class="progresso-texto">
+              <span>Progresso da meta</span>
+              <span id="percentualMeta">0%</span>
+            </div>
+            <div class="barra-container">
+              <div class="barra-progresso" id="barraProgressoMeta" style="width:0%"></div>
+            </div>
+          </div>
         </div>
         <div class="valor-box">
           <span>Ganhos hoje</span>
@@ -95,8 +108,8 @@
     <section id="lancamentos" class="tela ativa">
       <div class="card">
         <h2>Meta semanal</h2>
-        <label for="metaDiaria">Quanto você quer lucrar por dia?</label>
-        <input id="metaSemanal" type="number" step="0.01" placeholder="Ex: 200" />
+        <label for="metaSemanal">Quanto você quer lucrar na semana?</label>
+        <input id="metaSemanal" type="number" step="0.01" placeholder="Ex: 1000" />
         <button onclick="salvarMeta()">Salvar meta</button>
       </div>
 
@@ -147,7 +160,7 @@
 
       <div class="card">
         <h2>Histórico semanal</h2>
-        <div class="legenda"><span class="lucro">Lucro</span><span class="gasto">Despesa</span><span class="meta">Meta</span></div>
+        <div class="legenda"><span class="lucro">Lucro</span><span class="gasto">Despesa</span><span class="meta">Meta semanal dividida por dia</span></div>
         <div id="graficoSemanal"></div>
       </div>
 
@@ -171,13 +184,11 @@
 
   <script>
     let registros = JSON.parse(localStorage.getItem('registrosGanhos')) || [];
-    let metaSemanal = Number(localStorage.getItem('metaSemanal')) || 0;
+    let metaSemanal = Number(localStorage.getItem('metaSemanal')) || Number(localStorage.getItem('metaDiaria')) || 0;
+    document.getElementById('metaSemanal').value = metaSemanal || '';
 
     function formatarMoeda(valor) { return valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }); }
-    function salvarDados() { 
-      localStorage.setItem('registrosGanhos', JSON.stringify(registros));
-      localStorage.setItem('metaSemanal', String(metaSemanal));
-    }
+    function salvarDados() { localStorage.setItem('registrosGanhos', JSON.stringify(registros)); }
     function hojeInicio() { const d = new Date(); d.setHours(0,0,0,0); return d; }
     function dataItem(item) { return item.dataISO ? new Date(item.dataISO) : null; }
     function ehHoje(item) { const d = dataItem(item); const h = hojeInicio(); const a = new Date(h); a.setDate(h.getDate()+1); return d && d >= h && d < a; }
@@ -199,9 +210,10 @@
     function salvarMeta() {
       const valor = Number(document.getElementById('metaSemanal').value);
       metaSemanal = valor > 0 ? valor : 0;
-      salvarDados();
+      localStorage.setItem('metaSemanal', metaSemanal);
+      localStorage.removeItem('metaDiaria');
       atualizarTela();
-      alert('Meta salva com sucesso.');
+      alert('Meta semanal salva com sucesso.');
     }
 
     function adicionarGanho() {
@@ -230,6 +242,12 @@
       const inicio = new Date(hoje); inicio.setDate(hoje.getDate() - dif); inicio.setHours(0,0,0,0); return inicio;
     }
 
+    function obterFimDaSemana() {
+      const fim = new Date(obterInicioDaSemana());
+      fim.setDate(fim.getDate() + 7);
+      return fim;
+    }
+
     function resumoDia(dataBase) {
       const inicio = new Date(dataBase); inicio.setHours(0,0,0,0);
       const fim = new Date(inicio); fim.setDate(inicio.getDate()+1);
@@ -239,17 +257,34 @@
       return { ganhos, gastos, lucro: ganhos - gastos };
     }
 
+    function resumoSemanaAtual() {
+      const inicio = obterInicioDaSemana();
+      const fim = obterFimDaSemana();
+      const itens = registros.filter(item => { const d = dataItem(item); return d && d >= inicio && d < fim; });
+      const ganhos = itens.filter(i => i.tipo === 'ganho').reduce((s, i) => s + i.valor, 0);
+      const gastos = itens.filter(i => i.tipo === 'gasto').reduce((s, i) => s + i.valor, 0);
+      return { ganhos, gastos, lucro: ganhos - gastos };
+    }
+
+    function diasRestantesNaSemana() {
+      const hoje = hojeInicio();
+      const fim = obterFimDaSemana();
+      const diferencaMs = fim - hoje;
+      return Math.max(1, Math.ceil(diferencaMs / (1000 * 60 * 60 * 24)));
+    }
+
     function atualizarGraficoSemanal() {
       const dias = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom']; const inicio = obterInicioDaSemana();
+      const metaPorDia = metaSemanal > 0 ? metaSemanal / 7 : 0;
       const semana = dias.map((dia, i) => { const d = new Date(inicio); d.setDate(inicio.getDate()+i); return { dia, ...resumoDia(d) }; });
-      const maior = Math.max(1, metaSemanal, ...semana.map(i => Math.max(Math.abs(i.lucro), i.gastos)));
+      const maior = Math.max(1, metaPorDia, ...semana.map(i => Math.max(Math.abs(i.lucro), i.gastos)));
       const grafico = document.getElementById('graficoSemanal'); grafico.innerHTML = '';
       semana.forEach(item => {
         const lLucro = Math.min(100, Math.abs(item.lucro) / maior * 100);
         const lGasto = Math.min(100, item.gastos / maior * 100);
-        const lMeta = metaSemanal > 0 ? Math.min(100, metaSemanal / maior * 100) : 0;
+        const lMeta = metaPorDia > 0 ? Math.min(100, metaPorDia / maior * 100) : 0;
         const div = document.createElement('div'); div.className = 'grafico-linha';
-        div.innerHTML = `<div class="grafico-topo"><strong>${item.dia}</strong><span>${formatarMoeda(item.lucro)} lucro • ${formatarMoeda(item.gastos)} despesa</span></div><div class="barra-container"><div class="barra-lucro" style="width:${lLucro}%"></div></div><div class="barra-container"><div class="barra-gasto" style="width:${lGasto}%"></div></div>${metaSemanal ? `<div class="barra-container"><div class="barra-meta" style="width:${lMeta}%"></div></div>` : ''}`;
+        div.innerHTML = `<div class="grafico-topo"><strong>${item.dia}</strong><span>${formatarMoeda(item.lucro)} lucro • ${formatarMoeda(item.gastos)} despesa</span></div><div class="barra-container"><div class="barra-lucro" style="width:${lLucro}%"></div></div><div class="barra-container"><div class="barra-gasto" style="width:${lGasto}%"></div></div>${metaPorDia ? `<div class="barra-container"><div class="barra-meta" style="width:${lMeta}%"></div></div>` : ''}`;
         grafico.appendChild(div);
       });
     }
@@ -276,27 +311,20 @@
     function atualizarTela() {
       const ganhos = registros.filter(i => i.tipo === 'ganho'); const gastos = registros.filter(i => i.tipo === 'gasto');
       const totalGanhos = ganhos.reduce((s, i) => s + i.valor, 0); const totalGastos = gastos.reduce((s, i) => s + i.valor, 0); const lucro = totalGanhos - totalGastos;
-      const ganhosHoje = ganhos.filter(ehHoje).reduce((s, i) => s + i.valor, 0); const gastosHoje = gastos.filter(ehHoje).reduce((s, i) => s + i.valor, 0); const lucroHoje = ganhosHoje - gastosHoje;
+      const ganhosHoje = ganhos.filter(ehHoje).reduce((s, i) => s + i.valor, 0); const gastosHoje = gastos.filter(ehHoje).reduce((s, i) => s + i.valor, 0);
+      const semanaAtual = resumoSemanaAtual();
+      const lucroSemana = semanaAtual.lucro;
       const kmTotal = ganhos.reduce((s, i) => s + (Number(i.km) || 0), 0);
-      document.getElementById('ganhosHoje').textContent = formatarMoeda(ganhosHoje); document.getElementById('gastosHoje').textContent = formatarMoeda(gastosHoje); document.getElementById('lucroHoje').textContent = formatarMoeda(lucroHoje);
+      document.getElementById('ganhosHoje').textContent = formatarMoeda(ganhosHoje); document.getElementById('gastosHoje').textContent = formatarMoeda(gastosHoje); document.getElementById('lucroSemana').textContent = formatarMoeda(lucroSemana);
       document.getElementById('lucroLiquido').textContent = formatarMoeda(lucro); document.getElementById('lucroLiquido').className = lucro >= 0 ? 'positivo' : 'negativo'; document.getElementById('kmTotal').textContent = `${kmTotal.toFixed(1)} km`;
-      const inicioSemana = obterInicioDaSemana();
-const fimSemana = new Date(inicioSemana);
-fimSemana.setDate(inicioSemana.getDate() + 7);
 
-const lucroSemana = registros.filter(item => {
-  const d = dataItem(item);
-  return d && d >= inicioSemana && d < fimSemana;
-}).reduce((s, item) => item.tipo === 'ganho' ? s + item.valor : s - item.valor, 0);
+      const falta = metaSemanal - lucroSemana;
+      const percentual = metaSemanal > 0 ? Math.min(100, Math.max(0, (lucroSemana / metaSemanal) * 100)) : 0;
+      const porDiaRestante = falta > 0 ? falta / diasRestantesNaSemana() : 0;
+      document.getElementById('percentualMeta').textContent = `${percentual.toFixed(0)}%`;
+      document.getElementById('barraProgressoMeta').style.width = `${percentual}%`;
+      document.getElementById('statusMeta').textContent = metaSemanal > 0 ? (falta <= 0 ? `Meta semanal batida! Passou ${formatarMoeda(Math.abs(falta))}` : `Faltam ${formatarMoeda(falta)} • precisa de ${formatarMoeda(porDiaRestante)} por dia restante`) : 'Meta semanal não definida';
 
-const falta = metaSemanal - lucroSemana;
-
-document.getElementById('statusMeta').textContent =
-  metaSemanal > 0
-    ? (falta <= 0
-        ? `Meta batida! Passou ${formatarMoeda(Math.abs(falta))}`
-        : `Faltam ${formatarMoeda(falta)} para bater a meta`)
-    : 'Meta semanal não definida';
       document.getElementById('totalUber').textContent = formatarMoeda(ganhos.filter(i => i.app === 'Uber').reduce((s,i)=>s+i.valor,0));
       document.getElementById('totalIfood').textContent = formatarMoeda(ganhos.filter(i => i.app === 'iFood').reduce((s,i)=>s+i.valor,0));
       document.getElementById('total99').textContent = formatarMoeda(ganhos.filter(i => i.app === '99').reduce((s,i)=>s+i.valor,0));
@@ -328,25 +356,6 @@ document.getElementById('statusMeta').textContent =
     }
 
     if ('serviceWorker' in navigator) { navigator.serviceWorker.register('service-worker.js'); }
-    document.getElementById('metaSemanal').value = metaSemanal || '';
-    
-    // Sincronizar dados periodicamente (a cada 5 segundos)
-    setInterval(() => {
-      salvarDados();
-    }, 5000);
-    
-    // Sincronizar dados ao sair da página
-    window.addEventListener('beforeunload', () => {
-      salvarDados();
-    });
-    
-    // Sincronizar dados quando a aba muda de visibilidade
-    document.addEventListener('visibilitychange', () => {
-      if (document.hidden) {
-        salvarDados();
-      }
-    });
-    
     atualizarTela();
   </script>
 </body>
