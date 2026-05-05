@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Controle de Ganhos</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      font-family: Arial, sans-serif;
+    }
+
+    body {
+      margin: 0;
+      background: #f3f4f6;
+      color: #111827;
+    }
+
+    header {
+      background: #111827;
+      color: white;
+      padding: 20px;
+      text-align: center;
+    }
+
+    main {
+      max-width: 520px;
+      margin: auto;
+      padding: 16px;
+    }
+
+    .card {
+      background: white;
+      border-radius: 16px;
+      padding: 16px;
+      margin-bottom: 16px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    }
+
+    h1, h2, h3 {
+      margin-top: 0;
+    }
+
+    .resumo {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 10px;
+    }
+
+    .valor-box {
+      padding: 14px;
+      border-radius: 12px;
+      background: #f9fafb;
+    }
+
+    .valor-box span {
+      display: block;
+      font-size: 14px;
+      color: #6b7280;
+    }
+
+    .valor-box strong {
+      display: block;
+      margin-top: 4px;
+      font-size: 24px;
+    }
+
+    label {
+      display: block;
+      margin-top: 12px;
+      font-weight: bold;
+    }
+
+    input, select, button {
+      width: 100%;
+      padding: 14px;
+      margin-top: 6px;
+      border-radius: 10px;
+      border: 1px solid #d1d5db;
+      font-size: 16px;
+    }
+
+    button {
+      background: #111827;
+      color: white;
+      border: none;
+      font-weight: bold;
+      margin-top: 14px;
+      cursor: pointer;
+    }
+
+    button.perigo {
+      background: #dc2626;
+    }
+
+    .lista-item {
+      border-bottom: 1px solid #e5e7eb;
+      padding: 10px 0;
+      font-size: 14px;
+    }
+
+    .lista-item:last-child {
+      border-bottom: none;
+    }
+
+    .positivo {
+      color: #047857;
+    }
+
+    .negativo {
+      color: #dc2626;
+    }
+
+    .grafico-linha {
+      margin-bottom: 14px;
+    }
+
+    .grafico-topo {
+      display: flex;
+      justify-content: space-between;
+      font-size: 14px;
+      margin-bottom: 6px;
+    }
+
+    .barra-container {
+      width: 100%;
+      height: 14px;
+      background: #e5e7eb;
+      border-radius: 999px;
+      overflow: hidden;
+      margin-bottom: 5px;
+    }
+
+    .barra-lucro {
+      height: 100%;
+      background: #047857;
+    }
+
+    .barra-gasto {
+      height: 100%;
+      background: #dc2626;
+    }
+
+    .legenda {
+      display: flex;
+      gap: 12px;
+      font-size: 13px;
+      color: #4b5563;
+      margin-bottom: 12px;
+    }
+
+    .legenda span::before {
+      content: '';
+      display: inline-block;
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      margin-right: 5px;
+    }
+
+    .legenda .lucro::before {
+      background: #047857;
+    }
+
+    .legenda .gasto::before {
+      background: #dc2626;
+    }
+  </style>
+  <link rel="manifest" href="manifest.json" />
+  <meta name="theme-color" content="#111827" />
+</head>
+<body>
+  <header>
+    <h1>Controle de Ganhos</h1>
+    <p>Uber • iFood • 99</p>
+  </header>
+
+  <main>
+    <section class="card">
+      <h2>Resumo</h2>
+      <div class="resumo">
+        <div class="valor-box">
+          <span>Ganhos totais</span>
+          <strong id="totalGanhos" class="positivo">R$ 0,00</strong>
+        </div>
+        <div class="valor-box">
+          <span>Gastos totais</span>
+          <strong id="totalGastos" class="negativo">R$ 0,00</strong>
+        </div>
+        <div class="valor-box">
+          <span>Lucro líquido</span>
+          <strong id="lucroLiquido">R$ 0,00</strong>
+        </div>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>Adicionar ganho</h2>
+
+      <label for="appGanho">Aplicativo</label>
+      <select id="appGanho">
+        <option value="Uber">Uber</option>
+        <option value="iFood">iFood</option>
+        <option value="99">99</option>
+      </select>
+
+      <label for="valorGanho">Valor recebido</label>
+      <input id="valorGanho" type="number" step="0.01" placeholder="Ex: 35.50" />
+
+      <button onclick="adicionarGanho()">Salvar ganho</button>
+    </section>
+
+    <section class="card">
+      <h2>Adicionar gasto</h2>
+
+      <label for="tipoGasto">Tipo de gasto</label>
+      <select id="tipoGasto">
+        <option value="Combustível">Combustível</option>
+        <option value="Manutenção">Manutenção</option>
+        <option value="Alimentação">Alimentação</option>
+        <option value="Pedágio">Pedágio</option>
+        <option value="Outros">Outros</option>
+      </select>
+
+      <label for="valorGasto">Valor gasto</label>
+      <input id="valorGasto" type="number" step="0.01" placeholder="Ex: 80.00" />
+
+      <button onclick="adicionarGasto()">Salvar gasto</button>
+    </section>
+
+    <section class="card">
+      <h2>Totais por aplicativo</h2>
+      <p>Uber: <strong id="totalUber">R$ 0,00</strong></p>
+      <p>iFood: <strong id="totalIfood">R$ 0,00</strong></p>
+      <p>99: <strong id="total99">R$ 0,00</strong></p>
+    </section>
+
+    <section class="card">
+      <h2>Histórico semanal</h2>
+      <div class="legenda">
+        <span class="lucro">Lucro</span>
+        <span class="gasto">Despesa</span>
+      </div>
+      <div id="graficoSemanal"></div>
+    </section>
+
+    <section class="card">
+      <h2>Histórico</h2>
+      <div id="historico"></div>
+      <button class="perigo" onclick="limparTudo()">Apagar tudo</button>
+    </section>
+  </main>
+
+  <script>
+    let registros = JSON.parse(localStorage.getItem('registrosGanhos')) || [];
+
+    function formatarMoeda(valor) {
+      return valor.toLocaleString('pt-BR', {
+        style: 'currency',
+        currency: 'BRL'
+      });
+    }
+
+    function salvarDados() {
+      localStorage.setItem('registrosGanhos', JSON.stringify(registros));
+    }
+
+    function criarRegistroBase(tipo, valor, extras) {
+      const agora = new Date();
+      return {
+        tipo: tipo,
+        valor: valor,
+        data: agora.toLocaleString('pt-BR'),
+        dataISO: agora.toISOString(),
+        ...extras
+      };
+    }
+
+    function adicionarGanho() {
+      const app = document.getElementById('appGanho').value;
+      const valor = Number(document.getElementById('valorGanho').value);
+
+      if (!valor || valor <= 0) {
+        alert('Digite um valor válido para o ganho.');
+        return;
+      }
+
+      registros.push(criarRegistroBase('ganho', valor, { app: app }));
+
+      document.getElementById('valorGanho').value = '';
+      salvarDados();
+      atualizarTela();
+    }
+
+    function adicionarGasto() {
+      const tipo = document.getElementById('tipoGasto').value;
+      const valor = Number(document.getElementById('valorGasto').value);
+
+      if (!valor || valor <= 0) {
+        alert('Digite um valor válido para o gasto.');
+        return;
+      }
+
+      registros.push(criarRegistroBase('gasto', valor, { categoria: tipo }));
+
+      document.getElementById('valorGasto').value = '';
+      salvarDados();
+      atualizarTela();
+    }
+
+    function obterInicioDaSemana() {
+      const hoje = new Date();
+      const diaSemana = hoje.getDay();
+      const diferenca = diaSemana === 0 ? 6 : diaSemana - 1;
+      const inicio = new Date(hoje);
+      inicio.setDate(hoje.getDate() - diferenca);
+      inicio.setHours(0, 0, 0, 0);
+      return inicio;
+    }
+
+    function atualizarGraficoSemanal() {
+      const dias = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'];
+      const inicioSemana = obterInicioDaSemana();
+
+      const semana = dias.map((dia, index) => {
+        const dataDia = new Date(inicioSemana);
+        dataDia.setDate(inicioSemana.getDate() + index);
+        dataDia.setHours(0, 0, 0, 0);
+
+        const proximoDia = new Date(dataDia);
+        proximoDia.setDate(dataDia.getDate() + 1);
+
+        const registrosDoDia = registros.filter(item => {
+          const dataItem = item.dataISO ? new Date(item.dataISO) : null;
+          return dataItem && dataItem >= dataDia && dataItem < proximoDia;
+        });
+
+        const ganhos = registrosDoDia
+          .filter(item => item.tipo === 'ganho')
+          .reduce((soma, item) => soma + item.valor, 0);
+
+        const gastos = registrosDoDia
+          .filter(item => item.tipo === 'gasto')
+          .reduce((soma, item) => soma + item.valor, 0);
+
+        return {
+          dia,
+          ganhos,
+          gastos,
+          lucro: ganhos - gastos
+        };
+      });
+
+      const maiorValor = Math.max(
+        1,
+        ...semana.map(item => Math.max(Math.abs(item.lucro), item.gastos))
+      );
+
+      const grafico = document.getElementById('graficoSemanal');
+      grafico.innerHTML = '';
+
+      semana.forEach(item => {
+        const larguraLucro = Math.min(100, Math.abs(item.lucro) / maiorValor * 100);
+        const larguraGasto = Math.min(100, item.gastos / maiorValor * 100);
+
+        const div = document.createElement('div');
+        div.className = 'grafico-linha';
+
+        div.innerHTML = `
+          <div class="grafico-topo">
+            <strong>${item.dia}</strong>
+            <span>Lucro: ${formatarMoeda(item.lucro)} • Despesa: ${formatarMoeda(item.gastos)}</span>
+          </div>
+          <div class="barra-container">
+            <div class="barra-lucro" style="width: ${larguraLucro}%"></div>
+          </div>
+          <div class="barra-container">
+            <div class="barra-gasto" style="width: ${larguraGasto}%"></div>
+          </div>
+        `;
+
+        grafico.appendChild(div);
+      });
+    }
+
+    function atualizarTela() {
+      const ganhos = registros.filter(item => item.tipo === 'ganho');
+      const gastos = registros.filter(item => item.tipo === 'gasto');
+
+      const totalGanhos = ganhos.reduce((soma, item) => soma + item.valor, 0);
+      const totalGastos = gastos.reduce((soma, item) => soma + item.valor, 0);
+      const lucro = totalGanhos - totalGastos;
+
+      const totalUber = ganhos
+        .filter(item => item.app === 'Uber')
+        .reduce((soma, item) => soma + item.valor, 0);
+
+      const totalIfood = ganhos
+        .filter(item => item.app === 'iFood')
+        .reduce((soma, item) => soma + item.valor, 0);
+
+      const total99 = ganhos
+        .filter(item => item.app === '99')
+        .reduce((soma, item) => soma + item.valor, 0);
+
+      document.getElementById('totalGanhos').textContent = formatarMoeda(totalGanhos);
+      document.getElementById('totalGastos').textContent = formatarMoeda(totalGastos);
+      document.getElementById('lucroLiquido').textContent = formatarMoeda(lucro);
+      document.getElementById('lucroLiquido').className = lucro >= 0 ? 'positivo' : 'negativo';
+
+      document.getElementById('totalUber').textContent = formatarMoeda(totalUber);
+      document.getElementById('totalIfood').textContent = formatarMoeda(totalIfood);
+      document.getElementById('total99').textContent = formatarMoeda(total99);
+
+      atualizarGraficoSemanal();
+
+      const historico = document.getElementById('historico');
+      historico.innerHTML = '';
+
+      if (registros.length === 0) {
+        historico.innerHTML = '<p>Nenhum registro ainda.</p>';
+        return;
+      }
+
+      registros.slice().reverse().forEach(item => {
+        const div = document.createElement('div');
+        div.className = 'lista-item';
+
+        if (item.tipo === 'ganho') {
+          div.innerHTML = `<strong class="positivo">+ ${formatarMoeda(item.valor)}</strong><br>${item.app} • ${item.data}`;
+        } else {
+          div.innerHTML = `<strong class="negativo">- ${formatarMoeda(item.valor)}</strong><br>${item.categoria} • ${item.data}`;
+        }
+
+        historico.appendChild(div);
+      });
+    }
+
+    function limparTudo() {
+      const confirmar = confirm('Tem certeza que deseja apagar todos os registros?');
+
+      if (confirmar) {
+        registros = [];
+        salvarDados();
+        atualizarTela();
+      }
+    }
+
+    atualizarTela();
+  </script>
+  <script>
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker.register("service-worker.js");
+    }
+  </script>
+</body>
+</html>
