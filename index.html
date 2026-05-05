@@ -183,12 +183,28 @@
   </main>
 
   <script>
-    let registros = JSON.parse(localStorage.getItem('registrosGanhos')) || [];
+    function carregarRegistros() {
+      try {
+        const dadosSalvos = localStorage.getItem('registrosGanhos');
+        return dadosSalvos ? JSON.parse(dadosSalvos) : [];
+      } catch (erro) {
+        alert('Houve um problema ao carregar os dados salvos. O app vai iniciar vazio, mas seus dados podem estar no backup se você tiver exportado.');
+        return [];
+      }
+    }
+
+    let registros = carregarRegistros();
     let metaSemanal = Number(localStorage.getItem('metaSemanal')) || Number(localStorage.getItem('metaDiaria')) || 0;
     document.getElementById('metaSemanal').value = metaSemanal || '';
 
     function formatarMoeda(valor) { return valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }); }
-    function salvarDados() { localStorage.setItem('registrosGanhos', JSON.stringify(registros)); }
+    function salvarDados() {
+      try {
+        localStorage.setItem('registrosGanhos', JSON.stringify(registros));
+      } catch (erro) {
+        alert('Não foi possível salvar os dados. Verifique se o navegador não está em modo anônimo ou com armazenamento bloqueado.');
+      }
+    }
     function hojeInicio() { const d = new Date(); d.setHours(0,0,0,0); return d; }
     function dataItem(item) { return item.dataISO ? new Date(item.dataISO) : null; }
     function ehHoje(item) { const d = dataItem(item); const h = hojeInicio(); const a = new Date(h); a.setDate(h.getDate()+1); return d && d >= h && d < a; }
@@ -355,7 +371,11 @@
       a.href = url; a.download = 'backup-controle-ganhos.json'; a.click(); URL.revokeObjectURL(url);
     }
 
-    if ('serviceWorker' in navigator) { navigator.serviceWorker.register('service-worker.js'); }
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('service-worker.js').then(registro => {
+        registro.update();
+      });
+    }
     atualizarTela();
   </script>
 </body>
