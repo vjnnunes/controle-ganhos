@@ -126,8 +126,12 @@
         </div>
         <label for="valorGanho">Valor recebido</label>
         <input id="valorGanho" type="number" step="0.01" placeholder="Ex: 35.50" />
-        <label for="kmGanho">Km rodados (opcional)</label>
-        <input id="kmGanho" type="number" step="0.1" placeholder="Ex: 12.5" />
+        <label for="kmInicial">Km inicial</label>
+        <input id="kmInicial" type="number" step="0.1" placeholder="Ex: 12000" oninput="calcularKmRodado()" />
+        <label for="kmFinal">Km final</label>
+        <input id="kmFinal" type="number" step="0.1" placeholder="Ex: 12035" oninput="calcularKmRodado()" />
+        <label for="kmGanho">Total rodado</label>
+        <input id="kmGanho" type="number" step="0.1" placeholder="Calculado automaticamente" readonly />
         <label for="obsGanho">Observação (opcional)</label>
         <textarea id="obsGanho" placeholder="Ex: corrida aeroporto"></textarea>
         <button id="botaoSalvarGanho" onclick="adicionarGanho()">Salvar ganho</button>
@@ -302,18 +306,32 @@
       alert('Meta semanal salva com sucesso.');
     }
 
+    function calcularKmRodado() {
+      const kmInicial = Number(document.getElementById('kmInicial').value);
+      const kmFinal = Number(document.getElementById('kmFinal').value);
+      const campoKm = document.getElementById('kmGanho');
+
+      if (kmInicial > 0 && kmFinal > 0 && kmFinal >= kmInicial) {
+        campoKm.value = (kmFinal - kmInicial).toFixed(1);
+      } else {
+        campoKm.value = '';
+      }
+    }
+
     function adicionarGanho() {
       const app = obterNomeApp();
       const valor = Number(document.getElementById('valorGanho').value);
+      const kmInicial = Number(document.getElementById('kmInicial').value) || 0;
+      const kmFinal = Number(document.getElementById('kmFinal').value) || 0;
       const km = Number(document.getElementById('kmGanho').value) || 0;
       const obs = document.getElementById('obsGanho').value.trim();
       if (!valor || valor <= 0) { alert('Digite um valor válido para o ganho.'); return; }
 
       if (edicaoIndex !== null && edicaoTipo === 'ganho') {
-        registros[edicaoIndex] = { ...registros[edicaoIndex], tipo: 'ganho', app, valor, km, obs };
+        registros[edicaoIndex] = { ...registros[edicaoIndex], tipo: 'ganho', app, valor, kmInicial, kmFinal, km, obs };
         cancelarEdicao(false);
       } else {
-        registros.push(criarRegistroBase('ganho', valor, { app, km, obs }));
+        registros.push(criarRegistroBase('ganho', valor, { app, kmInicial, kmFinal, km, obs }));
       }
       limparFormularioGanho(); salvarDados(); atualizarTela();
     }
@@ -337,6 +355,8 @@
 
     function limparFormularioGanho() {
       document.getElementById('valorGanho').value = '';
+      document.getElementById('kmInicial').value = '';
+      document.getElementById('kmFinal').value = '';
       document.getElementById('kmGanho').value = '';
       document.getElementById('obsGanho').value = '';
       document.getElementById('outroApp').value = '';
@@ -374,6 +394,8 @@
         document.getElementById('outroApp').value = appsPadrao.includes(item.app) ? '' : item.app;
         verificarOutroApp();
         document.getElementById('valorGanho').value = item.valor || '';
+        document.getElementById('kmInicial').value = item.kmInicial || '';
+        document.getElementById('kmFinal').value = item.kmFinal || '';
         document.getElementById('kmGanho').value = item.km || '';
         document.getElementById('obsGanho').value = item.obs || '';
         document.getElementById('tituloFormularioGanho').textContent = 'Editar ganho';
@@ -533,8 +555,9 @@
         const div = document.createElement('div'); div.className = 'lista-item';
         const obs = item.obs ? `<br><span class="mini">${item.obs}</span>` : '';
         const km = item.km ? ` • ${item.km} km` : '';
+        const kmDetalhe = item.kmInicial && item.kmFinal ? `<br><span class="mini">Km inicial: ${item.kmInicial} • Km final: ${item.kmFinal} • Rodado: ${item.km} km</span>` : '';
         const litros = item.litros ? `<br><span class="mini">${item.litros} L${item.kmAbastecimento ? ` • ${item.kmAbastecimento} km informados` : ''}</span>` : '';
-        if (item.tipo === 'ganho') div.innerHTML = `<strong class="positivo">+ ${formatarMoeda(item.valor)}</strong><br>${item.app}${km} • ${item.data}${obs}<div class="acoes-item"><button class="secundario" onclick="editarRegistro(${indexReal})">Editar</button><button class="perigo" onclick="excluirRegistro(${indexReal})">Excluir</button></div>`;
+        if (item.tipo === 'ganho') div.innerHTML = `<strong class="positivo">+ ${formatarMoeda(item.valor)}</strong><br>${item.app}${km} • ${item.data}${kmDetalhe}${obs}<div class="acoes-item"><button class="secundario" onclick="editarRegistro(${indexReal})">Editar</button><button class="perigo" onclick="excluirRegistro(${indexReal})">Excluir</button></div>`;
         else div.innerHTML = `<strong class="negativo">- ${formatarMoeda(item.valor)}</strong><br>${item.categoria} • ${item.data}${obs}${litros}<div class="acoes-item"><button class="secundario" onclick="editarRegistro(${indexReal})">Editar</button><button class="perigo" onclick="excluirRegistro(${indexReal})">Excluir</button></div>`;
         historico.appendChild(div);
       });
@@ -555,11 +578,13 @@
     }
 
     function exportarCSV() {
-      const cabecalho = ['tipo','app/categoria','valor','km','litros','km_combustivel','data','observacao'];
+      const cabecalho = ['tipo','app/categoria','valor','km_inicial','km_final','km_rodado','litros','km_combustivel','data','observacao'];
       const linhas = registros.map(i => [
         i.tipo,
         i.tipo === 'ganho' ? (i.app || '') : (i.categoria || ''),
         String(i.valor || 0).replace('.', ','),
+        String(i.kmInicial || '').replace('.', ','),
+        String(i.kmFinal || '').replace('.', ','),
         String(i.km || '').replace('.', ','),
         String(i.litros || '').replace('.', ','),
         String(i.kmAbastecimento || '').replace('.', ','),
