@@ -15,6 +15,7 @@
     main { max-width: 560px; margin: -20px auto 30px; padding: 0 14px 20px; }
     .card { background: white; border-radius: 20px; padding: 16px; margin-bottom: 14px; box-shadow: 0 8px 24px rgba(15, 23, 42, 0.09); }
     h2 { margin: 0 0 12px; font-size: 20px; }
+    h3 { margin: 12px 0 8px; font-size: 16px; }
     label { display: block; margin-top: 12px; font-weight: bold; font-size: 14px; }
     input, select, textarea, button { width: 100%; padding: 14px; margin-top: 6px; border-radius: 12px; border: 1px solid #d1d5db; font-size: 16px; }
     textarea { resize: vertical; min-height: 70px; }
@@ -22,6 +23,7 @@
     button:active { transform: scale(0.99); }
     button.perigo { background: #dc2626; }
     button.secundario { background: #374151; }
+    button.verde { background: #047857; }
     .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
     .valor-box { padding: 14px; border-radius: 16px; background: #f9fafb; }
     .valor-box.destaque { background: #111827; color: white; grid-column: 1 / -1; }
@@ -31,8 +33,8 @@
     .positivo { color: #047857; }
     .negativo { color: #dc2626; }
     .destaque .positivo, .destaque .negativo { color: white; }
-    .abas { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 14px; }
-    .abas button { margin: 0; padding: 12px 8px; background: #e5e7eb; color: #111827; }
+    .abas { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 14px; }
+    .abas button { margin: 0; padding: 12px 6px; background: #e5e7eb; color: #111827; font-size: 14px; }
     .abas button.ativa { background: #111827; color: white; }
     .tela { display: none; }
     .tela.ativa { display: block; }
@@ -53,14 +55,21 @@
     .mini { font-size: 13px; color: #6b7280; margin-top: 8px; }
     .destaque .mini { color: #d1d5db; }
     .botoes-duplos { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .botoes-triplos { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
     .progresso-box { margin-top: 12px; }
     .progresso-texto { display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 6px; color: #d1d5db; }
+    .filtros { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 12px; }
+    .filtros button { margin: 0; padding: 10px 6px; background: #e5e7eb; color: #111827; font-size: 13px; }
+    .filtros button.ativo { background: #111827; color: white; }
+    .acoes-item { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 8px; }
+    .acoes-item button { margin-top: 0; padding: 10px; font-size: 14px; }
+    .oculto { display: none; }
   </style>
 </head>
 <body>
   <header>
     <h1>Controle de Ganhos</h1>
-    <p>Uber • iFood • 99</p>
+    <p>Uber • iFood • 99 • Outros</p>
   </header>
 
   <main>
@@ -80,22 +89,10 @@
             </div>
           </div>
         </div>
-        <div class="valor-box">
-          <span>Ganhos hoje</span>
-          <strong id="ganhosHoje" class="positivo">R$ 0,00</strong>
-        </div>
-        <div class="valor-box">
-          <span>Despesas hoje</span>
-          <strong id="gastosHoje" class="negativo">R$ 0,00</strong>
-        </div>
-        <div class="valor-box">
-          <span>Lucro total</span>
-          <strong id="lucroLiquido">R$ 0,00</strong>
-        </div>
-        <div class="valor-box">
-          <span>Km total</span>
-          <strong id="kmTotal">0 km</strong>
-        </div>
+        <div class="valor-box"><span>Ganhos hoje</span><strong id="ganhosHoje" class="positivo">R$ 0,00</strong></div>
+        <div class="valor-box"><span>Despesas hoje</span><strong id="gastosHoje" class="negativo">R$ 0,00</strong></div>
+        <div class="valor-box"><span>Lucro total</span><strong id="lucroLiquido">R$ 0,00</strong></div>
+        <div class="valor-box"><span>Km total</span><strong id="kmTotal">0 km</strong></div>
       </div>
     </section>
 
@@ -103,6 +100,7 @@
       <button id="abaLancamentos" class="ativa" onclick="mostrarTela('lancamentos')">Lançar</button>
       <button id="abaGraficos" onclick="mostrarTela('graficos')">Gráficos</button>
       <button id="abaHistorico" onclick="mostrarTela('historicoTela')">Histórico</button>
+      <button id="abaBackup" onclick="mostrarTela('backupTela')">Backup</button>
     </div>
 
     <section id="lancamentos" class="tela ativa">
@@ -114,26 +112,32 @@
       </div>
 
       <div class="card">
-        <h2>Adicionar ganho</h2>
+        <h2 id="tituloFormularioGanho">Adicionar ganho</h2>
         <label for="appGanho">Aplicativo</label>
-        <select id="appGanho">
+        <select id="appGanho" onchange="verificarOutroApp()">
           <option value="Uber">Uber</option>
           <option value="iFood">iFood</option>
           <option value="99">99</option>
+          <option value="Outros">Outros</option>
         </select>
+        <div id="campoOutroApp" class="oculto">
+          <label for="outroApp">Nome do aplicativo</label>
+          <input id="outroApp" type="text" placeholder="Ex: Lalamove, Indrive, particular" />
+        </div>
         <label for="valorGanho">Valor recebido</label>
         <input id="valorGanho" type="number" step="0.01" placeholder="Ex: 35.50" />
         <label for="kmGanho">Km rodados (opcional)</label>
         <input id="kmGanho" type="number" step="0.1" placeholder="Ex: 12.5" />
         <label for="obsGanho">Observação (opcional)</label>
         <textarea id="obsGanho" placeholder="Ex: corrida aeroporto"></textarea>
-        <button onclick="adicionarGanho()">Salvar ganho</button>
+        <button id="botaoSalvarGanho" onclick="adicionarGanho()">Salvar ganho</button>
+        <button id="botaoCancelarEdicaoGanho" class="secundario oculto" onclick="cancelarEdicao()">Cancelar edição</button>
       </div>
 
       <div class="card">
-        <h2>Adicionar despesa</h2>
+        <h2 id="tituloFormularioGasto">Adicionar despesa</h2>
         <label for="tipoGasto">Tipo de despesa</label>
-        <select id="tipoGasto">
+        <select id="tipoGasto" onchange="verificarCombustivel()">
           <option value="Combustível">Combustível</option>
           <option value="Manutenção">Manutenção</option>
           <option value="Alimentação">Alimentação</option>
@@ -143,19 +147,50 @@
         </select>
         <label for="valorGasto">Valor gasto</label>
         <input id="valorGasto" type="number" step="0.01" placeholder="Ex: 80.00" />
+        <div id="camposCombustivel">
+          <label for="litrosCombustivel">Litros abastecidos (opcional)</label>
+          <input id="litrosCombustivel" type="number" step="0.01" placeholder="Ex: 20" />
+          <label for="kmAbastecimento">Km do odômetro ou km rodados (opcional)</label>
+          <input id="kmAbastecimento" type="number" step="0.1" placeholder="Ex: 350" />
+        </div>
         <label for="obsGasto">Observação (opcional)</label>
         <textarea id="obsGasto" placeholder="Ex: abastecimento"></textarea>
-        <button onclick="adicionarGasto()">Salvar despesa</button>
+        <button id="botaoSalvarGasto" onclick="adicionarGasto()">Salvar despesa</button>
+        <button id="botaoCancelarEdicaoGasto" class="secundario oculto" onclick="cancelarEdicao()">Cancelar edição</button>
       </div>
     </section>
 
     <section id="graficos" class="tela">
       <div class="card">
+        <h2>Resumo da semana</h2>
+        <div class="grid">
+          <div class="valor-box"><span>Ganhos</span><strong id="semanaGanhos">R$ 0,00</strong></div>
+          <div class="valor-box"><span>Despesas</span><strong id="semanaGastos">R$ 0,00</strong></div>
+          <div class="valor-box"><span>Lucro</span><strong id="semanaLucro">R$ 0,00</strong></div>
+          <div class="valor-box"><span>Lucro/km</span><strong id="semanaLucroKm">R$ 0,00/km</strong></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>Ranking dos aplicativos</h2>
+        <div id="rankingApps"></div>
+      </div>
+
+      <div class="card">
+        <h2>Combustível</h2>
+        <p>Total gasto: <strong id="totalCombustivel">R$ 0,00</strong></p>
+        <p>Litros abastecidos: <strong id="totalLitros">0 L</strong></p>
+        <p>Preço médio por litro: <strong id="precoMedioLitro">R$ 0,00</strong></p>
+        <p>Média informada: <strong id="mediaKmLitro">0 km/L</strong></p>
+      </div>
+
+      <div class="card">
         <h2>Totais por aplicativo</h2>
         <p>Uber: <strong id="totalUber">R$ 0,00</strong></p>
         <p>iFood: <strong id="totalIfood">R$ 0,00</strong></p>
         <p>99: <strong id="total99">R$ 0,00</strong></p>
-        <p>Lucro por km: <strong id="lucroPorKm">R$ 0,00/km</strong></p>
+        <p>Outros: <strong id="totalOutros">R$ 0,00</strong></p>
+        <p>Lucro por km geral: <strong id="lucroPorKm">R$ 0,00/km</strong></p>
       </div>
 
       <div class="card">
@@ -173,11 +208,31 @@
     <section id="historicoTela" class="tela">
       <div class="card">
         <h2>Histórico</h2>
-        <div class="botoes-duplos">
-          <button class="secundario" onclick="exportarDados()">Backup</button>
-          <button class="perigo" onclick="limparTudo()">Apagar tudo</button>
+        <div class="filtros">
+          <button id="filtroHoje" onclick="alterarFiltro('hoje')">Hoje</button>
+          <button id="filtroSemana" class="ativo" onclick="alterarFiltro('semana')">Semana</button>
+          <button id="filtroMes" onclick="alterarFiltro('mes')">Mês</button>
+          <button id="filtroTudo" onclick="alterarFiltro('tudo')">Tudo</button>
         </div>
+        <div id="resumoFiltro" class="mini"></div>
         <div id="historico"></div>
+      </div>
+    </section>
+
+    <section id="backupTela" class="tela">
+      <div class="card">
+        <h2>Backup e exportação</h2>
+        <div class="botoes-duplos">
+          <button class="secundario" onclick="exportarDados()">Backup JSON</button>
+          <button class="verde" onclick="exportarCSV()">Exportar Excel</button>
+        </div>
+        <label for="arquivoBackup">Importar backup JSON</label>
+        <input id="arquivoBackup" type="file" accept="application/json" onchange="importarBackup(event)" />
+        <p class="mini">O backup JSON serve para restaurar o app. O Excel/CSV serve para abrir em planilha.</p>
+      </div>
+      <div class="card">
+        <h2>Zona de perigo</h2>
+        <button class="perigo" onclick="limparTudo()">Apagar tudo</button>
       </div>
     </section>
   </main>
@@ -188,22 +243,22 @@
         const dadosSalvos = localStorage.getItem('registrosGanhos');
         return dadosSalvos ? JSON.parse(dadosSalvos) : [];
       } catch (erro) {
-        alert('Houve um problema ao carregar os dados salvos. O app vai iniciar vazio, mas seus dados podem estar no backup se você tiver exportado.');
+        alert('Houve um problema ao carregar os dados salvos.');
         return [];
       }
     }
 
     let registros = carregarRegistros();
     let metaSemanal = Number(localStorage.getItem('metaSemanal')) || Number(localStorage.getItem('metaDiaria')) || 0;
+    let filtroHistorico = 'semana';
+    let edicaoIndex = null;
+    let edicaoTipo = null;
     document.getElementById('metaSemanal').value = metaSemanal || '';
 
     function formatarMoeda(valor) { return valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }); }
     function salvarDados() {
-      try {
-        localStorage.setItem('registrosGanhos', JSON.stringify(registros));
-      } catch (erro) {
-        alert('Não foi possível salvar os dados. Verifique se o navegador não está em modo anônimo ou com armazenamento bloqueado.');
-      }
+      try { localStorage.setItem('registrosGanhos', JSON.stringify(registros)); }
+      catch (erro) { alert('Não foi possível salvar os dados. Verifique se o navegador não está em modo anônimo.'); }
     }
     function hojeInicio() { const d = new Date(); d.setHours(0,0,0,0); return d; }
     function dataItem(item) { return item.dataISO ? new Date(item.dataISO) : null; }
@@ -216,11 +271,26 @@
       if (nome === 'lancamentos') document.getElementById('abaLancamentos').classList.add('ativa');
       if (nome === 'graficos') document.getElementById('abaGraficos').classList.add('ativa');
       if (nome === 'historicoTela') document.getElementById('abaHistorico').classList.add('ativa');
+      if (nome === 'backupTela') document.getElementById('abaBackup').classList.add('ativa');
     }
 
     function criarRegistroBase(tipo, valor, extras) {
       const agora = new Date();
       return { tipo, valor, data: agora.toLocaleString('pt-BR'), dataISO: agora.toISOString(), ...extras };
+    }
+
+    function verificarOutroApp() {
+      document.getElementById('campoOutroApp').classList.toggle('oculto', document.getElementById('appGanho').value !== 'Outros');
+    }
+
+    function verificarCombustivel() {
+      document.getElementById('camposCombustivel').classList.toggle('oculto', document.getElementById('tipoGasto').value !== 'Combustível');
+    }
+
+    function obterNomeApp() {
+      const app = document.getElementById('appGanho').value;
+      if (app !== 'Outros') return app;
+      return document.getElementById('outroApp').value.trim() || 'Outros';
     }
 
     function salvarMeta() {
@@ -233,61 +303,131 @@
     }
 
     function adicionarGanho() {
-      const app = document.getElementById('appGanho').value;
+      const app = obterNomeApp();
       const valor = Number(document.getElementById('valorGanho').value);
       const km = Number(document.getElementById('kmGanho').value) || 0;
       const obs = document.getElementById('obsGanho').value.trim();
       if (!valor || valor <= 0) { alert('Digite um valor válido para o ganho.'); return; }
-      registros.push(criarRegistroBase('ganho', valor, { app, km, obs }));
-      document.getElementById('valorGanho').value = ''; document.getElementById('kmGanho').value = ''; document.getElementById('obsGanho').value = '';
-      salvarDados(); atualizarTela();
+
+      if (edicaoIndex !== null && edicaoTipo === 'ganho') {
+        registros[edicaoIndex] = { ...registros[edicaoIndex], tipo: 'ganho', app, valor, km, obs };
+        cancelarEdicao(false);
+      } else {
+        registros.push(criarRegistroBase('ganho', valor, { app, km, obs }));
+      }
+      limparFormularioGanho(); salvarDados(); atualizarTela();
     }
 
     function adicionarGasto() {
       const categoria = document.getElementById('tipoGasto').value;
       const valor = Number(document.getElementById('valorGasto').value);
       const obs = document.getElementById('obsGasto').value.trim();
+      const litros = categoria === 'Combustível' ? (Number(document.getElementById('litrosCombustivel').value) || 0) : 0;
+      const kmAbastecimento = categoria === 'Combustível' ? (Number(document.getElementById('kmAbastecimento').value) || 0) : 0;
       if (!valor || valor <= 0) { alert('Digite um valor válido para a despesa.'); return; }
-      registros.push(criarRegistroBase('gasto', valor, { categoria, obs }));
-      document.getElementById('valorGasto').value = ''; document.getElementById('obsGasto').value = '';
-      salvarDados(); atualizarTela();
+
+      if (edicaoIndex !== null && edicaoTipo === 'gasto') {
+        registros[edicaoIndex] = { ...registros[edicaoIndex], tipo: 'gasto', categoria, valor, obs, litros, kmAbastecimento };
+        cancelarEdicao(false);
+      } else {
+        registros.push(criarRegistroBase('gasto', valor, { categoria, obs, litros, kmAbastecimento }));
+      }
+      limparFormularioGasto(); salvarDados(); atualizarTela();
+    }
+
+    function limparFormularioGanho() {
+      document.getElementById('valorGanho').value = '';
+      document.getElementById('kmGanho').value = '';
+      document.getElementById('obsGanho').value = '';
+      document.getElementById('outroApp').value = '';
+      document.getElementById('appGanho').value = 'Uber';
+      verificarOutroApp();
+    }
+
+    function limparFormularioGasto() {
+      document.getElementById('valorGasto').value = '';
+      document.getElementById('obsGasto').value = '';
+      document.getElementById('litrosCombustivel').value = '';
+      document.getElementById('kmAbastecimento').value = '';
+      document.getElementById('tipoGasto').value = 'Combustível';
+      verificarCombustivel();
+    }
+
+    function cancelarEdicao(limpar = true) {
+      edicaoIndex = null; edicaoTipo = null;
+      document.getElementById('tituloFormularioGanho').textContent = 'Adicionar ganho';
+      document.getElementById('tituloFormularioGasto').textContent = 'Adicionar despesa';
+      document.getElementById('botaoSalvarGanho').textContent = 'Salvar ganho';
+      document.getElementById('botaoSalvarGasto').textContent = 'Salvar despesa';
+      document.getElementById('botaoCancelarEdicaoGanho').classList.add('oculto');
+      document.getElementById('botaoCancelarEdicaoGasto').classList.add('oculto');
+      if (limpar) { limparFormularioGanho(); limparFormularioGasto(); }
+    }
+
+    function editarRegistro(index) {
+      const item = registros[index];
+      edicaoIndex = index; edicaoTipo = item.tipo;
+      mostrarTela('lancamentos');
+      if (item.tipo === 'ganho') {
+        const appsPadrao = ['Uber', 'iFood', '99'];
+        document.getElementById('appGanho').value = appsPadrao.includes(item.app) ? item.app : 'Outros';
+        document.getElementById('outroApp').value = appsPadrao.includes(item.app) ? '' : item.app;
+        verificarOutroApp();
+        document.getElementById('valorGanho').value = item.valor || '';
+        document.getElementById('kmGanho').value = item.km || '';
+        document.getElementById('obsGanho').value = item.obs || '';
+        document.getElementById('tituloFormularioGanho').textContent = 'Editar ganho';
+        document.getElementById('botaoSalvarGanho').textContent = 'Salvar edição';
+        document.getElementById('botaoCancelarEdicaoGanho').classList.remove('oculto');
+      } else {
+        document.getElementById('tipoGasto').value = item.categoria || 'Outros';
+        verificarCombustivel();
+        document.getElementById('valorGasto').value = item.valor || '';
+        document.getElementById('obsGasto').value = item.obs || '';
+        document.getElementById('litrosCombustivel').value = item.litros || '';
+        document.getElementById('kmAbastecimento').value = item.kmAbastecimento || '';
+        document.getElementById('tituloFormularioGasto').textContent = 'Editar despesa';
+        document.getElementById('botaoSalvarGasto').textContent = 'Salvar edição';
+        document.getElementById('botaoCancelarEdicaoGasto').classList.remove('oculto');
+      }
     }
 
     function obterInicioDaSemana() {
       const hoje = new Date(); const diaSemana = hoje.getDay(); const dif = diaSemana === 0 ? 6 : diaSemana - 1;
       const inicio = new Date(hoje); inicio.setDate(hoje.getDate() - dif); inicio.setHours(0,0,0,0); return inicio;
     }
+    function obterFimDaSemana() { const fim = new Date(obterInicioDaSemana()); fim.setDate(fim.getDate() + 7); return fim; }
+    function obterInicioMes() { const d = new Date(); return new Date(d.getFullYear(), d.getMonth(), 1); }
+    function obterFimMes() { const d = new Date(); return new Date(d.getFullYear(), d.getMonth() + 1, 1); }
 
-    function obterFimDaSemana() {
-      const fim = new Date(obterInicioDaSemana());
-      fim.setDate(fim.getDate() + 7);
-      return fim;
+    function dentroDoFiltro(item, filtro) {
+      const d = dataItem(item); if (!d) return false;
+      if (filtro === 'tudo') return true;
+      if (filtro === 'hoje') return ehHoje(item);
+      if (filtro === 'semana') return d >= obterInicioDaSemana() && d < obterFimDaSemana();
+      if (filtro === 'mes') return d >= obterInicioMes() && d < obterFimMes();
+      return true;
+    }
+
+    function obterRegistrosFiltro(filtro) { return registros.filter(item => dentroDoFiltro(item, filtro)); }
+
+    function resumoPorItens(itens) {
+      const ganhos = itens.filter(i => i.tipo === 'ganho').reduce((s, i) => s + i.valor, 0);
+      const gastos = itens.filter(i => i.tipo === 'gasto').reduce((s, i) => s + i.valor, 0);
+      const km = itens.filter(i => i.tipo === 'ganho').reduce((s, i) => s + (Number(i.km) || 0), 0);
+      return { ganhos, gastos, lucro: ganhos - gastos, km };
     }
 
     function resumoDia(dataBase) {
       const inicio = new Date(dataBase); inicio.setHours(0,0,0,0);
       const fim = new Date(inicio); fim.setDate(inicio.getDate()+1);
-      const itens = registros.filter(item => { const d = dataItem(item); return d && d >= inicio && d < fim; });
-      const ganhos = itens.filter(i => i.tipo === 'ganho').reduce((s, i) => s + i.valor, 0);
-      const gastos = itens.filter(i => i.tipo === 'gasto').reduce((s, i) => s + i.valor, 0);
-      return { ganhos, gastos, lucro: ganhos - gastos };
+      return resumoPorItens(registros.filter(item => { const d = dataItem(item); return d && d >= inicio && d < fim; }));
     }
 
-    function resumoSemanaAtual() {
-      const inicio = obterInicioDaSemana();
-      const fim = obterFimDaSemana();
-      const itens = registros.filter(item => { const d = dataItem(item); return d && d >= inicio && d < fim; });
-      const ganhos = itens.filter(i => i.tipo === 'ganho').reduce((s, i) => s + i.valor, 0);
-      const gastos = itens.filter(i => i.tipo === 'gasto').reduce((s, i) => s + i.valor, 0);
-      return { ganhos, gastos, lucro: ganhos - gastos };
-    }
+    function resumoSemanaAtual() { return resumoPorItens(obterRegistrosFiltro('semana')); }
+    function diasRestantesNaSemana() { const hoje = hojeInicio(); const fim = obterFimDaSemana(); return Math.max(1, Math.ceil((fim - hoje) / (1000 * 60 * 60 * 24))); }
 
-    function diasRestantesNaSemana() {
-      const hoje = hojeInicio();
-      const fim = obterFimDaSemana();
-      const diferencaMs = fim - hoje;
-      return Math.max(1, Math.ceil(diferencaMs / (1000 * 60 * 60 * 24)));
-    }
+    function alterarFiltro(filtro) { filtroHistorico = filtro; atualizarHistorico(); }
 
     function atualizarGraficoSemanal() {
       const dias = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom']; const inicio = obterInicioDaSemana();
@@ -324,15 +464,43 @@
       });
     }
 
+    function atualizarRankingApps() {
+      const ganhos = registros.filter(i => i.tipo === 'ganho');
+      const mapa = {};
+      ganhos.forEach(i => { mapa[i.app || 'Outros'] = (mapa[i.app || 'Outros'] || 0) + i.valor; });
+      const lista = Object.entries(mapa).sort((a,b) => b[1] - a[1]);
+      const div = document.getElementById('rankingApps');
+      div.innerHTML = lista.length ? '' : '<p>Nenhum ganho registrado ainda.</p>';
+      lista.forEach(([app, total], index) => {
+        const item = document.createElement('p');
+        item.innerHTML = `<strong>${index + 1}º ${app}</strong>: ${formatarMoeda(total)}`;
+        div.appendChild(item);
+      });
+    }
+
+    function atualizarCombustivel() {
+      const combustiveis = registros.filter(i => i.tipo === 'gasto' && i.categoria === 'Combustível');
+      const total = combustiveis.reduce((s, i) => s + i.valor, 0);
+      const litros = combustiveis.reduce((s, i) => s + (Number(i.litros) || 0), 0);
+      const kmInfo = combustiveis.reduce((s, i) => s + (Number(i.kmAbastecimento) || 0), 0);
+      document.getElementById('totalCombustivel').textContent = formatarMoeda(total);
+      document.getElementById('totalLitros').textContent = `${litros.toFixed(2)} L`;
+      document.getElementById('precoMedioLitro').textContent = litros > 0 ? formatarMoeda(total / litros) : 'R$ 0,00';
+      document.getElementById('mediaKmLitro').textContent = litros > 0 && kmInfo > 0 ? `${(kmInfo / litros).toFixed(2)} km/L` : '0 km/L';
+    }
+
     function atualizarTela() {
       const ganhos = registros.filter(i => i.tipo === 'ganho'); const gastos = registros.filter(i => i.tipo === 'gasto');
       const totalGanhos = ganhos.reduce((s, i) => s + i.valor, 0); const totalGastos = gastos.reduce((s, i) => s + i.valor, 0); const lucro = totalGanhos - totalGastos;
       const ganhosHoje = ganhos.filter(ehHoje).reduce((s, i) => s + i.valor, 0); const gastosHoje = gastos.filter(ehHoje).reduce((s, i) => s + i.valor, 0);
-      const semanaAtual = resumoSemanaAtual();
-      const lucroSemana = semanaAtual.lucro;
+      const semanaAtual = resumoSemanaAtual(); const lucroSemana = semanaAtual.lucro;
       const kmTotal = ganhos.reduce((s, i) => s + (Number(i.km) || 0), 0);
       document.getElementById('ganhosHoje').textContent = formatarMoeda(ganhosHoje); document.getElementById('gastosHoje').textContent = formatarMoeda(gastosHoje); document.getElementById('lucroSemana').textContent = formatarMoeda(lucroSemana);
       document.getElementById('lucroLiquido').textContent = formatarMoeda(lucro); document.getElementById('lucroLiquido').className = lucro >= 0 ? 'positivo' : 'negativo'; document.getElementById('kmTotal').textContent = `${kmTotal.toFixed(1)} km`;
+      document.getElementById('semanaGanhos').textContent = formatarMoeda(semanaAtual.ganhos);
+      document.getElementById('semanaGastos').textContent = formatarMoeda(semanaAtual.gastos);
+      document.getElementById('semanaLucro').textContent = formatarMoeda(semanaAtual.lucro);
+      document.getElementById('semanaLucroKm').textContent = semanaAtual.km > 0 ? `${formatarMoeda(semanaAtual.lucro / semanaAtual.km)}/km` : 'R$ 0,00/km';
 
       const falta = metaSemanal - lucroSemana;
       const percentual = metaSemanal > 0 ? Math.min(100, Math.max(0, (lucroSemana / metaSemanal) * 100)) : 0;
@@ -344,39 +512,89 @@
       document.getElementById('totalUber').textContent = formatarMoeda(ganhos.filter(i => i.app === 'Uber').reduce((s,i)=>s+i.valor,0));
       document.getElementById('totalIfood').textContent = formatarMoeda(ganhos.filter(i => i.app === 'iFood').reduce((s,i)=>s+i.valor,0));
       document.getElementById('total99').textContent = formatarMoeda(ganhos.filter(i => i.app === '99').reduce((s,i)=>s+i.valor,0));
+      document.getElementById('totalOutros').textContent = formatarMoeda(ganhos.filter(i => !['Uber','iFood','99'].includes(i.app)).reduce((s,i)=>s+i.valor,0));
       document.getElementById('lucroPorKm').textContent = kmTotal > 0 ? `${formatarMoeda(lucro / kmTotal)}/km` : 'R$ 0,00/km';
-      atualizarGraficoSemanal(); atualizarGraficoMensal(); atualizarHistorico();
+      atualizarRankingApps(); atualizarCombustivel(); atualizarGraficoSemanal(); atualizarGraficoMensal(); atualizarHistorico();
     }
 
     function atualizarHistorico() {
+      document.querySelectorAll('.filtros button').forEach(b => b.classList.remove('ativo'));
+      const btn = document.getElementById(`filtro${filtroHistorico.charAt(0).toUpperCase() + filtroHistorico.slice(1)}`);
+      if (btn) btn.classList.add('ativo');
+      const itensFiltrados = obterRegistrosFiltro(filtroHistorico);
+      const resumo = resumoPorItens(itensFiltrados);
+      document.getElementById('resumoFiltro').textContent = `Ganhos: ${formatarMoeda(resumo.ganhos)} • Despesas: ${formatarMoeda(resumo.gastos)} • Lucro: ${formatarMoeda(resumo.lucro)} • Km: ${resumo.km.toFixed(1)}`;
+
       const historico = document.getElementById('historico'); historico.innerHTML = '';
-      if (registros.length === 0) { historico.innerHTML = '<p>Nenhum registro ainda.</p>'; return; }
+      if (itensFiltrados.length === 0) { historico.innerHTML = '<p>Nenhum registro nesse período.</p>'; return; }
       registros.slice().reverse().forEach((item, indexInvertido) => {
         const indexReal = registros.length - 1 - indexInvertido;
+        if (!dentroDoFiltro(item, filtroHistorico)) return;
         const div = document.createElement('div'); div.className = 'lista-item';
         const obs = item.obs ? `<br><span class="mini">${item.obs}</span>` : '';
         const km = item.km ? ` • ${item.km} km` : '';
-        if (item.tipo === 'ganho') div.innerHTML = `<strong class="positivo">+ ${formatarMoeda(item.valor)}</strong><br>${item.app}${km} • ${item.data}${obs}<br><button class="perigo" onclick="excluirRegistro(${indexReal})">Excluir</button>`;
-        else div.innerHTML = `<strong class="negativo">- ${formatarMoeda(item.valor)}</strong><br>${item.categoria} • ${item.data}${obs}<br><button class="perigo" onclick="excluirRegistro(${indexReal})">Excluir</button>`;
+        const litros = item.litros ? `<br><span class="mini">${item.litros} L${item.kmAbastecimento ? ` • ${item.kmAbastecimento} km informados` : ''}</span>` : '';
+        if (item.tipo === 'ganho') div.innerHTML = `<strong class="positivo">+ ${formatarMoeda(item.valor)}</strong><br>${item.app}${km} • ${item.data}${obs}<div class="acoes-item"><button class="secundario" onclick="editarRegistro(${indexReal})">Editar</button><button class="perigo" onclick="excluirRegistro(${indexReal})">Excluir</button></div>`;
+        else div.innerHTML = `<strong class="negativo">- ${formatarMoeda(item.valor)}</strong><br>${item.categoria} • ${item.data}${obs}${litros}<div class="acoes-item"><button class="secundario" onclick="editarRegistro(${indexReal})">Editar</button><button class="perigo" onclick="excluirRegistro(${indexReal})">Excluir</button></div>`;
         historico.appendChild(div);
       });
     }
 
     function excluirRegistro(index) { if (confirm('Excluir este lançamento?')) { registros.splice(index, 1); salvarDados(); atualizarTela(); } }
     function limparTudo() { if (confirm('Tem certeza que deseja apagar todos os registros?')) { registros = []; salvarDados(); atualizarTela(); } }
+
+    function baixarArquivo(nome, conteudo, tipo) {
+      const blob = new Blob([conteudo], { type: tipo });
+      const url = URL.createObjectURL(blob); const a = document.createElement('a');
+      a.href = url; a.download = nome; a.click(); URL.revokeObjectURL(url);
+    }
+
     function exportarDados() {
       const dados = JSON.stringify({ registros, metaSemanal }, null, 2);
-      const blob = new Blob([dados], { type: 'application/json' });
-      const url = URL.createObjectURL(blob); const a = document.createElement('a');
-      a.href = url; a.download = 'backup-controle-ganhos.json'; a.click(); URL.revokeObjectURL(url);
+      baixarArquivo('backup-controle-ganhos.json', dados, 'application/json');
+    }
+
+    function exportarCSV() {
+      const cabecalho = ['tipo','app/categoria','valor','km','litros','km_combustivel','data','observacao'];
+      const linhas = registros.map(i => [
+        i.tipo,
+        i.tipo === 'ganho' ? (i.app || '') : (i.categoria || ''),
+        String(i.valor || 0).replace('.', ','),
+        String(i.km || '').replace('.', ','),
+        String(i.litros || '').replace('.', ','),
+        String(i.kmAbastecimento || '').replace('.', ','),
+        i.data || '',
+        (i.obs || '').replace(/;/g, ',')
+      ]);
+      const csv = [cabecalho, ...linhas].map(l => l.join(';')).join('\n');
+      baixarArquivo('controle-ganhos.csv', '\ufeff' + csv, 'text/csv;charset=utf-8');
+    }
+
+    function importarBackup(event) {
+      const arquivo = event.target.files[0];
+      if (!arquivo) return;
+      const leitor = new FileReader();
+      leitor.onload = function(e) {
+        try {
+          const dados = JSON.parse(e.target.result);
+          const novosRegistros = Array.isArray(dados) ? dados : dados.registros;
+          if (!Array.isArray(novosRegistros)) throw new Error('Backup inválido');
+          if (!confirm('Importar esse backup? Isso vai substituir os dados atuais.')) return;
+          registros = novosRegistros;
+          metaSemanal = Number(dados.metaSemanal) || metaSemanal;
+          localStorage.setItem('metaSemanal', metaSemanal);
+          document.getElementById('metaSemanal').value = metaSemanal || '';
+          salvarDados(); atualizarTela(); alert('Backup importado com sucesso.');
+        } catch (erro) { alert('Não foi possível importar. Verifique se o arquivo é um backup JSON válido.'); }
+      };
+      leitor.readAsText(arquivo);
+      event.target.value = '';
     }
 
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('service-worker.js').then(registro => {
-        registro.update();
-      });
+      navigator.serviceWorker.register('service-worker.js').then(registro => { registro.update(); });
     }
-    atualizarTela();
+    verificarOutroApp(); verificarCombustivel(); atualizarTela();
   </script>
 </body>
 </html>
